@@ -150,19 +150,32 @@ async function analyzeWithGemini(
     ? imageBase64.split(",")[1]
     : imageBase64;
 
-  const prompt = `You are an AI image analysis expert specializing in detecting artifacts and issues in AI-generated images.
+  const prompt = `You are an AI image analysis expert. Analyze this AI-generated image and provide SPECIFIC, ACTIONABLE fixes.
 
 Your task is to:
-1. Estimate what prompt was likely used to generate the image
-2. Identify specific issues/artifacts common in AI images (wrong fingers, face distortions, text issues, etc.)
-3. Create an improved prompt that addresses these issues
+1. Estimate what prompt was likely used
+2. Identify specific issues (wrong fingers, face distortions, lighting problems, etc.)
+3. Provide a COMPLETE refined prompt with specific fix keywords
+
+IMPORTANT - Add these SPECIFIC keywords to fix common issues:
+- Hand/finger issues → add: "anatomically correct hands, five fingers, detailed hands"
+- Face distortion → add: "symmetrical face, detailed facial features, portrait quality"
+- Lighting issues → add: "consistent lighting, single light source, soft shadows"
+- Perspective errors → add: "correct perspective, proper proportions"
+- Blurry areas → add: "sharp focus, high detail, 8k resolution"
+- Text artifacts → add: "no text, no watermarks, clean image"
+
+The refinedPrompt must be COMPLETE and READY-TO-USE:
+1. Original scene description
+2. All fix keywords for detected issues
+3. Quality boosters: "highly detailed, professional quality, masterpiece"
 ${historicalHints}
 
 Respond in JSON format only:
 {
   "originalPrompt": "estimated original prompt",
   "issues": ["specific issue 1", "specific issue 2"],
-  "refinedPrompt": "improved prompt with specific fixes"
+  "refinedPrompt": "COMPLETE prompt: [scene] + [fix keywords] + [quality boosters]"
 }`;
 
   const response = await fetch(

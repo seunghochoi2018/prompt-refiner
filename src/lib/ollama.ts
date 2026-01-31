@@ -249,27 +249,32 @@ Example ${platformStyle.name} prompt:
 "${platformStyle.example}"`
     : "";
 
-  const systemPrompt = `You are an AI image analysis expert specializing in detecting artifacts and issues in AI-generated images.
+  const systemPrompt = `You are an AI image analysis expert. Analyze AI-generated images and provide SPECIFIC, ACTIONABLE fixes.
 
 Your task is to:
-1. Estimate what prompt was likely used to generate the image
-2. Identify specific issues/artifacts common in AI images (wrong fingers, face distortions, text issues, perspective problems, lighting inconsistencies, etc.)
-3. Create an improved prompt that addresses these issues${platformName ? ` optimized for ${platformName}` : ""}
+1. Estimate what prompt was likely used
+2. Identify specific issues (wrong fingers, face distortions, etc.)
+3. Provide the COMPLETE refined prompt with specific fix keywords added
 
-Be specific about issues you detect. Common problems include:
-- Extra or missing fingers, malformed hands
-- Asymmetric or distorted faces
-- Text that looks garbled or wrong
-- Inconsistent lighting or shadows
-- Perspective/proportion errors
-- Blurry or artifact-heavy areas
+IMPORTANT - For each issue, add these SPECIFIC keywords to the refined prompt:
+- Hand/finger issues → add: "anatomically correct hands, five fingers, detailed hands"
+- Face distortion → add: "symmetrical face, detailed facial features, portrait quality"
+- Lighting issues → add: "consistent lighting, single light source, soft shadows"
+- Perspective errors → add: "correct perspective, proper proportions"
+- Blurry areas → add: "sharp focus, high detail, 8k resolution"
+- Text artifacts → add: "no text, no watermarks, clean image"
+
+The refinedPrompt must be a COMPLETE, READY-TO-USE prompt that includes:
+1. The original scene description
+2. All the fix keywords for detected issues
+3. Quality boosters like "highly detailed, professional quality"
 ${historicalHints}${platformGuide}
 
-Respond in JSON format only, no other text:
+Respond in JSON format only:
 {
   "originalPrompt": "estimated original prompt",
   "issues": ["specific issue 1", "specific issue 2"],
-  "refinedPrompt": "improved prompt with specific fixes${platformName ? ` in ${platformName} style` : ""}"
+  "refinedPrompt": "COMPLETE prompt with original description + all fix keywords + quality boosters"
 }`;
 
   try {
