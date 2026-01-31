@@ -129,7 +129,8 @@ export async function analyzeImageWithOllama(
     : imageBase64;
 
   // 플랫폼별 스타일 가이드 추가
-  const platformStyle = platform && PLATFORM_STYLES[platform];
+  const platformStyle = platform ? PLATFORM_STYLES[platform] : undefined;
+  const platformName = platformStyle?.name || platform || "";
   const platformGuide = platformStyle
     ? `\n\nIMPORTANT: The refined prompt must follow ${platformStyle.name} prompt style:
 ${platformStyle.guidelines}
@@ -143,7 +144,7 @@ Example ${platformStyle.name} prompt:
 Your task is to:
 1. Estimate what prompt was likely used to generate the image
 2. Identify specific issues/artifacts common in AI images (wrong fingers, face distortions, text issues, perspective problems, lighting inconsistencies, etc.)
-3. Create an improved prompt that addresses these issues${platform ? ` optimized for ${platformStyle?.name || platform}` : ""}
+3. Create an improved prompt that addresses these issues${platformName ? ` optimized for ${platformName}` : ""}
 
 Be specific about issues you detect. Common problems include:
 - Extra or missing fingers, malformed hands
@@ -158,7 +159,7 @@ Respond in JSON format only, no other text:
 {
   "originalPrompt": "estimated original prompt",
   "issues": ["specific issue 1", "specific issue 2"],
-  "refinedPrompt": "improved prompt with specific fixes${platform ? ` in ${platformStyle?.name || platform} style` : ""}"
+  "refinedPrompt": "improved prompt with specific fixes${platformName ? ` in ${platformName} style` : ""}"
 }`;
 
   try {

@@ -1,7 +1,12 @@
-import { supabase, AnalysisRecord } from "./supabase";
+import { supabase, isSupabaseConfigured, AnalysisRecord } from "./supabase";
 
 // Save analysis record
 export async function saveAnalysis(record: Omit<AnalysisRecord, "id" | "created_at">) {
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Supabase not configured, skipping save");
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("analyses")
     .insert(record)
@@ -10,7 +15,7 @@ export async function saveAnalysis(record: Omit<AnalysisRecord, "id" | "created_
 
   if (error) {
     console.error("Error saving analysis:", error);
-    throw error;
+    return null;
   }
 
   return data;
@@ -27,6 +32,11 @@ export async function saveFeedback(
     resultImageUrl?: string;
   }
 ) {
+  if (!isSupabaseConfigured || !supabase) {
+    console.log("Supabase not configured, skipping feedback save");
+    return;
+  }
+
   const { error } = await supabase
     .from("analyses")
     .update({
@@ -40,22 +50,22 @@ export async function saveFeedback(
 
   if (error) {
     console.error("Error saving feedback:", error);
-    throw error;
+    return;
   }
 
-  // Update issue patterns based on feedback
   if (feedback.worked !== undefined) {
     await updateIssuePatterns(analysisId, feedback.worked, feedback.issuesRemaining, feedback.comment);
   }
 }
 
-// Update issue patterns with new data - now learns from failures too
 async function updateIssuePatterns(
   analysisId: string,
   worked: boolean,
   issuesRemaining?: string[],
   comment?: string
 ) {
+  if (!isSupabaseConfigured || !supabase) return;
+
   const { data: analysis } = await supabase
     .from("analyses")
     .select("*")
@@ -64,7 +74,6 @@ async function updateIssuePatterns(
 
   if (!analysis) return;
 
-  // For each detected issue, update or create pattern
   for (const issue of analysis.detected_issues) {
     const issueType = normalizeIssueType(issue);
 
@@ -87,14 +96,13 @@ async function updateIssuePatterns(
           updates.successful_fixes = [...fixes, analysis.refined_prompt].slice(-50);
         }
       } else {
-        // Learn from failures too - store failed patterns to avoid
         const failedFixes = existing.failed_fixes || [];
         const failureEntry = {
           prompt: analysis.refined_prompt,
           issues_remaining: issuesRemaining || [],
           comment: comment || "",
         };
-        updates.failed_fixes = [...failedFixes, failureEntry].slice(-30); // Keep last 30 failures
+        updates.failed_fixes = [...failedFixes, failureEntry].slice(-30);
       }
 
       await supabase
@@ -102,7 +110,6 @@ async function updateIssuePatterns(
         .update(updates)
         .eq("id", existing.id);
     } else {
-      // Create new pattern
       const newPattern: Record<string, unknown> = {
         issue_type: issueType,
         platform: analysis.platform || "unknown",
@@ -120,7 +127,6 @@ async function updateIssuePatterns(
     }
   }
 
-  // Also track remaining issues specifically
   if (!worked && issuesRemaining && issuesRemaining.length > 0) {
     for (const remaining of issuesRemaining) {
       await trackRemainingIssue(remaining, analysis.refined_prompt, analysis.platform);
@@ -128,8 +134,9 @@ async function updateIssuePatterns(
   }
 }
 
-// Track which issues remain after fix attempts - helps identify persistent problems
 async function trackRemainingIssue(issue: string, attemptedFix: string, platform?: string) {
+  if (!isSupabaseConfigured || !supabase) return;
+
   const issueType = normalizeRemainingIssue(issue);
 
   const { data: existing } = await supabase
@@ -157,36 +164,32 @@ async function trackRemainingIssue(issue: string, attemptedFix: string, platform
   }
 }
 
-// Normalize remaining issue labels to categories
 function normalizeRemainingIssue(issue: string): string {
   const lower = issue.toLowerCase();
-
   if (lower.includes("hand")) return "persistent_hand_issues";
   if (lower.includes("face")) return "persistent_face_issues";
   if (lower.includes("text")) return "persistent_text_issues";
   if (lower.includes("lighting")) return "persistent_lighting_issues";
   if (lower.includes("different") || lower.includes("intent")) return "prompt_drift";
   if (lower.includes("new issues")) return "introduced_new_issues";
-
   return "other_persistent";
 }
 
-// Normalize issue descriptions to categories
 function normalizeIssueType(issue: string): string {
   const lower = issue.toLowerCase();
-
   if (lower.includes("finger") || lower.includes("hand")) return "hand_issues";
   if (lower.includes("face") || lower.includes("eye") || lower.includes("mouth")) return "face_distortion";
   if (lower.includes("text") || lower.includes("letter") || lower.includes("word")) return "text_artifact";
   if (lower.includes("lighting") || lower.includes("shadow")) return "lighting_inconsistency";
   if (lower.includes("perspective") || lower.includes("proportion")) return "perspective_issues";
   if (lower.includes("blur") || lower.includes("artifact")) return "image_artifacts";
-
   return "other";
 }
 
 // Get best fixes for an issue type
 export async function getBestFixes(issueType: string, platform?: string) {
+  if (!isSupabaseConfigured || !supabase) return [];
+
   let query = supabase
     .from("issue_patterns")
     .select("*")
@@ -203,6 +206,8 @@ export async function getBestFixes(issueType: string, platform?: string) {
 
 // Get patterns to avoid (failed fixes)
 export async function getFailedPatterns(issueType: string, platform?: string) {
+  if (!isSupabaseConfigured || !supabase) return [];
+
   let query = supabase
     .from("issue_patterns")
     .select("failed_fixes")
@@ -218,6 +223,8 @@ export async function getFailedPatterns(issueType: string, platform?: string) {
 
 // Get success rate for issue types
 export async function getIssueSuccessRates() {
+  if (!isSupabaseConfigured || !supabase) return {};
+
   const { data } = await supabase
     .from("issue_patterns")
     .select("issue_type, success_count, total_count, platform");
