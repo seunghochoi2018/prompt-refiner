@@ -257,15 +257,23 @@ export default function Home() {
         {/* Supported Platforms */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Works with all major AI generators
+            Works with 20+ AI generators
           </p>
-          <div className="flex justify-center gap-6 flex-wrap text-gray-400 dark:text-gray-500">
+          <div className="flex justify-center gap-4 flex-wrap text-gray-400 dark:text-gray-500 text-sm">
             <span>Midjourney</span>
-            <span>DALL-E</span>
+            <span>DALL-E 3</span>
             <span>Stable Diffusion</span>
+            <span>SDXL</span>
+            <span>Flux</span>
+            <span>Leonardo.AI</span>
+            <span>Firefly</span>
             <span>Sora</span>
             <span>Runway</span>
             <span>Pika</span>
+            <span>Kling</span>
+            <span>Veo</span>
+            <span>Luma</span>
+            <span>+ more</span>
           </div>
         </div>
 
