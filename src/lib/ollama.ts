@@ -111,6 +111,116 @@ export const PLATFORM_STYLES: Record<string, {
 - 스타일 키워드 후반부에
 - SD보다 자연어에 강함`,
     example: "a woman gracefully walking through an ancient enchanted forest, magical golden particles floating around her, cinematic sunset lighting, photorealistic, 8k"
+  },
+  sdxl: {
+    name: "SDXL",
+    type: "image",
+    description: "Stable Diffusion XL",
+    guidelines: `- SD 1.5보다 자연어 이해력 좋음
+- 품질 태그 여전히 유효
+- 더 긴 프롬프트 처리 가능
+- 스타일 혼합에 강함`,
+    example: "masterpiece, best quality, a woman walking through enchanted forest, magical atmosphere, golden hour lighting, cinematic, highly detailed, 8k uhd"
+  },
+  ideogram: {
+    name: "Ideogram",
+    type: "image",
+    description: "텍스트 렌더링에 강한 AI",
+    guidelines: `- 텍스트 포함 이미지에 최적화
+- 자연어 설명 사용
+- 텍스트 내용은 따옴표로 명시
+- 폰트 스타일 지정 가능`,
+    example: "A vintage poster with the text \"ADVENTURE AWAITS\" in bold retro typography, mountain landscape background, warm sunset colors, travel poster style"
+  },
+  leonardo: {
+    name: "Leonardo.AI",
+    type: "image",
+    description: "게임/캐릭터 아트에 강한 AI",
+    guidelines: `- 스타일 프리셋 활용
+- 캐릭터 디자인에 최적화
+- 네거티브 프롬프트 지원
+- 디테일 수준 명시`,
+    example: "fantasy warrior woman, intricate armor design, enchanted forest background, magical lighting, highly detailed, concept art style, 4k"
+  },
+  firefly: {
+    name: "Adobe Firefly",
+    type: "image",
+    description: "Adobe의 상업용 AI",
+    guidelines: `- 자연어 설명 선호
+- 상업적 사용 안전
+- 스타일 참조 기능 활용
+- 색상/톤 명시 가능`,
+    example: "Professional photograph of a woman walking through a magical forest, soft natural lighting, warm autumn colors, editorial style, high resolution"
+  },
+  imagen: {
+    name: "Google Imagen",
+    type: "image",
+    description: "Google의 이미지 생성 AI",
+    guidelines: `- 상세한 자연어 설명
+- 문맥 이해력 우수
+- 스타일과 분위기 명시
+- 복잡한 장면 처리 가능`,
+    example: "A photorealistic scene of a woman in a flowing dress walking through an enchanted forest at golden hour, with magical particles of light floating in the air, cinematic composition"
+  },
+  playground: {
+    name: "Playground AI",
+    type: "image",
+    description: "다양한 모델 지원 플랫폼",
+    guidelines: `- 모델별 스타일 차이 있음
+- 필터/스타일 프리셋 활용
+- SD 기반 문법 호환
+- 품질 태그 유효`,
+    example: "beautiful woman walking through magical forest, golden hour, ethereal lighting, highly detailed, masterpiece, cinematic"
+  },
+  minimax: {
+    name: "MiniMax",
+    type: "video",
+    description: "중국 AI 영상 생성",
+    guidelines: `- 구체적 동작 설명
+- 장면 전환 명시
+- 감정/표정 상세히
+- 배경 환경 설명`,
+    example: "A young woman walks slowly through a misty bamboo forest, her long hair flowing in the gentle wind, she turns to look at the camera with a peaceful smile, soft morning light"
+  },
+  luma: {
+    name: "Luma Dream Machine",
+    type: "video",
+    description: "Luma AI 영상 생성",
+    guidelines: `- 카메라 움직임 명시
+- 자연스러운 동작 설명
+- 조명/분위기 상세히
+- 짧고 명확한 문장`,
+    example: "Cinematic shot of a woman walking through an enchanted forest, camera slowly tracking her movement, golden sunlight streaming through trees, magical atmosphere"
+  },
+  haiper: {
+    name: "Haiper",
+    type: "video",
+    description: "빠른 영상 생성 AI",
+    guidelines: `- 간결한 설명 선호
+- 핵심 동작 중심
+- 스타일 키워드 활용
+- 복잡한 장면 피하기`,
+    example: "woman walking in magical forest, floating lights, cinematic, golden hour"
+  },
+  genmo: {
+    name: "Genmo",
+    type: "video",
+    description: "창의적 영상 생성 AI",
+    guidelines: `- 자연어 설명
+- 분위기/감정 명시
+- 카메라 앵글 지정
+- 색감/톤 설명`,
+    example: "A dreamy scene of a woman walking through a forest filled with magical floating lights, warm golden tones, slow graceful movement, ethereal atmosphere"
+  },
+  morph: {
+    name: "Morph Studio",
+    type: "video",
+    description: "전문가용 영상 AI",
+    guidelines: `- 영화적 용어 사용
+- 샷 구성 상세히
+- 조명 설정 명시
+- 컬러 그레이딩 참고`,
+    example: "Wide establishing shot, woman in red dress walking through enchanted forest, anamorphic lens flare, golden hour backlight, cinematic color grade, 24fps film look"
   }
 };
 

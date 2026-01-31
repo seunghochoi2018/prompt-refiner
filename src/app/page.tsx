@@ -10,7 +10,13 @@ const AI_PLATFORMS = {
     { id: "midjourney", name: "Midjourney" },
     { id: "dalle", name: "DALL-E 3" },
     { id: "sd", name: "Stable Diffusion" },
+    { id: "sdxl", name: "SDXL" },
     { id: "flux", name: "Flux" },
+    { id: "ideogram", name: "Ideogram" },
+    { id: "leonardo", name: "Leonardo.AI" },
+    { id: "firefly", name: "Adobe Firefly" },
+    { id: "imagen", name: "Google Imagen" },
+    { id: "playground", name: "Playground AI" },
   ],
   video: [
     { id: "sora", name: "Sora" },
@@ -18,6 +24,11 @@ const AI_PLATFORMS = {
     { id: "pika", name: "Pika" },
     { id: "kling", name: "Kling" },
     { id: "veo", name: "Veo" },
+    { id: "minimax", name: "MiniMax" },
+    { id: "luma", name: "Luma Dream Machine" },
+    { id: "haiper", name: "Haiper" },
+    { id: "genmo", name: "Genmo" },
+    { id: "morph", name: "Morph Studio" },
   ],
 };
 
