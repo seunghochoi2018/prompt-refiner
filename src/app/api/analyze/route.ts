@@ -105,12 +105,18 @@ async function analyzeMedia(
   issues: string[];
   refinedPrompt: string;
 }> {
-  // Check if Ollama is running
+  // Check if Ollama is running (local development)
   const ollamaRunning = await checkOllamaStatus();
 
   if (ollamaRunning) {
     // Use local Ollama (free)
     return await analyzeImageWithOllama(imageBase64, historicalHints, platform);
+  }
+
+  // Try Google Gemini (free tier)
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    return await analyzeWithGemini(imageBase64, geminiKey, historicalHints, platform);
   }
 
   // Fallback: Check for OpenAI API key

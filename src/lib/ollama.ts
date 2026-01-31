@@ -167,6 +167,7 @@ Respond in JSON format only, no other text:
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
       },
       body: JSON.stringify({
         model: "llava:7b",
@@ -222,7 +223,11 @@ function extractFromText(text: string): {
 // Check if Ollama is running
 export async function checkOllamaStatus(): Promise<boolean> {
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
     return response.ok;
   } catch {
     return false;
@@ -232,7 +237,11 @@ export async function checkOllamaStatus(): Promise<boolean> {
 // Get available models
 export async function getAvailableModels(): Promise<string[]> {
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
     if (!response.ok) return [];
 
     const data = await response.json();
