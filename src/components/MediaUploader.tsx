@@ -68,8 +68,14 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
 
+    // Check for HTML files (common mistake: saving webpage instead of image)
+    if (file.type === "text/html" || file.name.endsWith(".html") || file.name.endsWith(".htm")) {
+      setError("This is a webpage file, not an image/video. To save properly: Right-click the image → 'Save image as...' (not 'Save page as')");
+      return;
+    }
+
     if (!isImage && !isVideo) {
-      setError("Please upload an image or video file");
+      setError("Please upload an image or video file (PNG, JPG, MP4, WebM)");
       return;
     }
 
@@ -192,16 +198,22 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
       {/* Quick Tips */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
         <p className="font-medium text-blue-800 dark:text-blue-300 mb-2">How to upload:</p>
-        <div className="space-y-2 text-blue-700 dark:text-blue-400">
-          <div className="flex items-start gap-2">
-            <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium">Image</span>
-            <span>Right-click image → Copy → Ctrl+V here</span>
+        <div className="space-y-3 text-blue-700 dark:text-blue-400">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium">Image</span>
+            </div>
+            <p className="ml-1">Right-click image → <b>&quot;Save image as...&quot;</b> → Drag file here</p>
+            <p className="ml-1 text-xs text-gray-500">or: Right-click → &quot;Copy image&quot; → Ctrl+V here</p>
           </div>
-          <div className="flex items-start gap-2">
-            <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded text-xs font-medium">Video</span>
-            <span>Download video → Drag file here or click to browse</span>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded text-xs font-medium">Video</span>
+            </div>
+            <p className="ml-1">Click download button on AI site → Drag .mp4 file here</p>
           </div>
         </div>
+        <p className="mt-3 text-xs text-red-500 dark:text-red-400">* Do NOT use &quot;Save page as&quot; - this saves webpage, not the image/video</p>
       </div>
 
       {/* Error Message */}
