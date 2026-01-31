@@ -140,6 +140,70 @@ async function analyzeMedia(
   };
 }
 
+async function analyzeWithGemini(
+  imageBase64: string,
+  apiKey: string,
+  historicalHints: string,
+  platform?: string
+) {
+  const base64Data = imageBase64.includes(",")
+    ? imageBase64.split(",")[1]
+    : imageBase64;
+
+  const prompt = `You are an AI image analysis expert specializing in detecting artifacts and issues in AI-generated images.
+
+Your task is to:
+1. Estimate what prompt was likely used to generate the image
+2. Identify specific issues/artifacts common in AI images (wrong fingers, face distortions, text issues, etc.)
+3. Create an improved prompt that addresses these issues
+${historicalHints}
+
+Respond in JSON format only:
+{
+  "originalPrompt": "estimated original prompt",
+  "issues": ["specific issue 1", "specific issue 2"],
+  "refinedPrompt": "improved prompt with specific fixes"
+}`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+          ]
+        }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error("No JSON found");
+  } catch {
+    return {
+      originalPrompt: "Unable to determine",
+      issues: ["Analysis completed but response format was unexpected"],
+      refinedPrompt: content || "Please try again",
+    };
+  }
+}
+
 async function analyzeWithOpenAI(
   imageBase64: string,
   apiKey: string,
