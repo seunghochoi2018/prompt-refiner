@@ -1,0 +1,286 @@
+import { NextRequest, NextResponse } from "next/server";
+import { saveAnalysis, generateImageHash, getBestFixes } from "@/lib/database";
+import { analyzeImageWithOllama, checkOllamaStatus } from "@/lib/ollama";
+import { extractVideoFrames, checkFfmpegAvailable } from "@/lib/video";
+
+export async function POST(request: NextRequest) {
+  try {
+    const { image, video, platform } = await request.json();
+
+    if (!image && !video) {
+      return NextResponse.json(
+        { error: "No image or video provided" },
+        { status: 400 }
+      );
+    }
+
+    // Handle video: extract frames and analyze each
+    if (video) {
+      const ffmpegAvailable = await checkFfmpegAvailable();
+      if (!ffmpegAvailable) {
+        return NextResponse.json(
+          { error: "Video analysis requires ffmpeg. Please install ffmpeg." },
+          { status: 400 }
+        );
+      }
+
+      const frames = await extractVideoFrames(video, 5);
+      if (frames.length === 0) {
+        return NextResponse.json(
+          { error: "Failed to extract frames from video" },
+          { status: 400 }
+        );
+      }
+
+      // Analyze each frame
+      const frameAnalyses = [];
+      const historicalFixes = await getHistoricalPatterns();
+
+      for (const frame of frames) {
+        try {
+          const analysis = await analyzeMedia(frame.imageBase64, historicalFixes, platform);
+          frameAnalyses.push({
+            timestamp: frame.timestamp,
+            ...analysis,
+          });
+        } catch (error) {
+          console.error(`Frame analysis error at ${frame.timestamp}s:`, error);
+        }
+      }
+
+      // Combine analyses
+      const combinedResult = combineVideoAnalyses(frameAnalyses);
+
+      // Save to database
+      let analysisId: string | undefined;
+      try {
+        const saved = await saveAnalysis({
+          image_hash: await generateImageHash(video),
+          platform: platform || undefined,
+          detected_issues: combinedResult.issues,
+          original_prompt_guess: combinedResult.originalPrompt,
+          refined_prompt: combinedResult.refinedPrompt,
+          metadata: { type: "video", frameCount: frames.length },
+        });
+        analysisId = saved?.id;
+      } catch (dbError) {
+        console.error("Database save error:", dbError);
+      }
+
+      return NextResponse.json({
+        ...combinedResult,
+        analysisId,
+        frameAnalyses, // Include individual frame analyses
+      });
+    }
+
+    // Handle image
+    const historicalFixes = await getHistoricalPatterns();
+    const result = await analyzeMedia(image, historicalFixes, platform);
+
+    // Save to database
+    let analysisId: string | undefined;
+    try {
+      const saved = await saveAnalysis({
+        image_hash: await generateImageHash(image),
+        platform: platform || undefined,
+        detected_issues: result.issues,
+        original_prompt_guess: result.originalPrompt,
+        refined_prompt: result.refinedPrompt,
+      });
+      analysisId = saved?.id;
+    } catch (dbError) {
+      console.error("Database save error:", dbError);
+    }
+
+    return NextResponse.json({
+      ...result,
+      analysisId,
+    });
+  } catch (error) {
+    console.error("Analysis error:", error);
+    return NextResponse.json(
+      { error: "Failed to analyze media" },
+      { status: 500 }
+    );
+  }
+}
+
+async function analyzeMedia(
+  imageBase64: string,
+  historicalHints: string,
+  platform?: string
+): Promise<{
+  originalPrompt: string;
+  issues: string[];
+  refinedPrompt: string;
+}> {
+  // Check if Ollama is running
+  const ollamaRunning = await checkOllamaStatus();
+
+  if (ollamaRunning) {
+    // Use local Ollama (free)
+    return await analyzeImageWithOllama(imageBase64, historicalHints, platform);
+  }
+
+  // Fallback: Check for OpenAI API key
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (apiKey) {
+    return await analyzeWithOpenAI(imageBase64, apiKey, historicalHints);
+  }
+
+  // Demo mode: return sample response
+  return {
+    originalPrompt: "A woman walking in a forest with magical lights",
+    issues: [
+      "Hands have incorrect number of fingers (6 visible)",
+      "Face asymmetry detected in left eye area",
+      "Lighting inconsistency between foreground and background",
+      "Text artifact visible in lower right corner",
+    ],
+    refinedPrompt:
+      "A woman walking in an enchanted forest with magical floating lights, full body shot from behind to avoid face/hand issues, soft diffused lighting throughout the scene, cinematic composition, no text, 8k resolution, photorealistic --ar 16:9 --v 6",
+  };
+}
+
+async function analyzeWithOpenAI(
+  imageBase64: string,
+  apiKey: string,
+  historicalHints: string
+) {
+  const base64Data = imageBase64.includes(",")
+    ? imageBase64.split(",")[1]
+    : imageBase64;
+
+  const systemPrompt = `You are an AI image analysis expert specializing in detecting artifacts and issues in AI-generated images.
+
+Your task is to:
+1. Estimate what prompt was likely used to generate the image
+2. Identify specific issues/artifacts common in AI images
+3. Create an improved prompt that addresses these issues
+${historicalHints}
+
+Respond in JSON format:
+{
+  "originalPrompt": "estimated original prompt",
+  "issues": ["specific issue 1", "specific issue 2"],
+  "refinedPrompt": "improved prompt with specific fixes"
+}`;
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Analyze this AI-generated image." },
+            {
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${base64Data}`, detail: "low" },
+            },
+          ],
+        },
+      ],
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0]?.message?.content;
+
+  try {
+    return JSON.parse(content);
+  } catch {
+    return {
+      originalPrompt: "Unable to determine",
+      issues: ["Analysis completed but response format was unexpected"],
+      refinedPrompt: content || "Please try again",
+    };
+  }
+}
+
+function combineVideoAnalyses(
+  frameAnalyses: Array<{
+    timestamp: number;
+    originalPrompt: string;
+    issues: string[];
+    refinedPrompt: string;
+  }>
+): {
+  originalPrompt: string;
+  issues: string[];
+  refinedPrompt: string;
+} {
+  if (frameAnalyses.length === 0) {
+    return {
+      originalPrompt: "Unable to analyze video",
+      issues: ["No frames could be analyzed"],
+      refinedPrompt: "Please try with a different video",
+    };
+  }
+
+  // Combine issues from all frames (deduplicated)
+  const allIssues = new Set<string>();
+  frameAnalyses.forEach((fa) => fa.issues.forEach((i) => allIssues.add(i)));
+
+  // Use the most common prompt guess or first one
+  const promptCounts = new Map<string, number>();
+  frameAnalyses.forEach((fa) => {
+    promptCounts.set(fa.originalPrompt, (promptCounts.get(fa.originalPrompt) || 0) + 1);
+  });
+  const mostCommonPrompt = [...promptCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  // Combine refined prompts or use the one from the middle frame
+  const middleIndex = Math.floor(frameAnalyses.length / 2);
+  const refinedPrompt = frameAnalyses[middleIndex]?.refinedPrompt || "";
+
+  return {
+    originalPrompt: mostCommonPrompt || frameAnalyses[0].originalPrompt,
+    issues: Array.from(allIssues).slice(0, 10), // Max 10 issues
+    refinedPrompt: refinedPrompt + " --video consistent frames, smooth motion",
+  };
+}
+
+async function getHistoricalPatterns(): Promise<string> {
+  try {
+    const handFixes = await getBestFixes("hand_issues");
+    const faceFixes = await getBestFixes("face_distortion");
+    const textFixes = await getBestFixes("text_artifact");
+
+    const patterns: string[] = [];
+
+    if (handFixes.length > 0 && handFixes[0].success_count > 5) {
+      patterns.push(
+        `For hand issues: Users report success with hiding hands, using back views, or "anatomically correct hands"`
+      );
+    }
+    if (faceFixes.length > 0 && faceFixes[0].success_count > 5) {
+      patterns.push(
+        `For face issues: Users report success with "symmetrical face", profile views, or "high detail face"`
+      );
+    }
+    if (textFixes.length > 0 && textFixes[0].success_count > 5) {
+      patterns.push(
+        `For text artifacts: Users report success by adding "no text, no letters, no watermarks"`
+      );
+    }
+
+    return patterns.length > 0
+      ? `\n\nHistorical successful patterns:\n${patterns.join("\n")}`
+      : "";
+  } catch {
+    return "";
+  }
+}
