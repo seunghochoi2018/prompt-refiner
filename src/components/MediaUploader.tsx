@@ -79,14 +79,15 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
         body: JSON.stringify({ url: urlInput }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to fetch media from URL");
+        throw new Error(data.error || "Failed to fetch media from URL");
       }
 
-      const { imageData } = await response.json();
-      onUpload(imageData, "image");
-    } catch {
-      setError("Failed to load from URL. Please try uploading directly.");
+      onUpload(data.imageData, "image");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load from URL. Please try uploading directly.");
     } finally {
       setIsLoadingUrl(false);
     }
@@ -148,22 +149,34 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
       </div>
 
       {/* URL Input */}
-      <div className="flex gap-2">
-        <input
-          type="url"
-          value={urlInput}
-          onChange={(e) => setUrlInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
-          placeholder="Paste image or video URL here..."
-          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-        <button
-          onClick={handleUrlSubmit}
-          disabled={isLoadingUrl || !urlInput.trim()}
-          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md"
-        >
-          {isLoadingUrl ? "Loading..." : "Fetch"}
-        </button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
+            placeholder="Paste direct image URL (ending in .jpg, .png, etc.)"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            onClick={handleUrlSubmit}
+            disabled={isLoadingUrl || !urlInput.trim()}
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md"
+          >
+            {isLoadingUrl ? "Loading..." : "Fetch"}
+          </button>
+        </div>
+        <details className="text-xs text-gray-500 dark:text-gray-400">
+          <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
+            Which URLs work?
+          </summary>
+          <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-1">
+            <p className="text-green-600 dark:text-green-400">Works: Direct image links (i.imgur.com, cdn.discordapp.com, etc.)</p>
+            <p className="text-red-500 dark:text-red-400">Doesn&apos;t work: Share pages (gemini.google.com/share, chatgpt.com/share, etc.)</p>
+            <p className="mt-2">Tip: Right-click the image and select &quot;Copy image address&quot; to get the direct URL, or download and upload directly.</p>
+          </div>
+        </details>
       </div>
 
       {/* Error Message */}
