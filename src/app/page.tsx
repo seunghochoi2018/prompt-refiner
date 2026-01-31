@@ -260,10 +260,11 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="mt-8 text-center text-xs text-gray-400 space-y-2">
-          <p>Powered by AI - Fast & Free</p>
+          <p>&copy; {new Date().getFullYear()} Prompt Refiner by Mike. All rights reserved.</p>
           <div className="flex justify-center gap-4">
             <a href="/privacy" className="hover:text-gray-600 dark:hover:text-gray-300">Privacy Policy</a>
             <a href="/terms" className="hover:text-gray-600 dark:hover:text-gray-300">Terms of Service</a>
+            <a href="/feedback" className="hover:text-gray-600 dark:hover:text-gray-300">Feedback</a>
           </div>
         </footer>
       </div>

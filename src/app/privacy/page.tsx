@@ -55,7 +55,7 @@ export default function PrivacyPolicy() {
 
           <h2 className="text-xl font-semibold mt-6 mb-3">7. Contact</h2>
           <p>
-            For privacy-related inquiries, please contact us at: privacy@promptrefiner.com
+            For privacy-related inquiries, please contact us at: contact@promptrefiner.com
           </p>
 
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
