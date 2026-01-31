@@ -1,36 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveAnalysis, generateImageHash, getBestFixes } from "@/lib/database";
 import { analyzeImageWithOllama, checkOllamaStatus } from "@/lib/ollama";
-import { extractVideoFrames, checkFfmpegAvailable } from "@/lib/video";
+
+interface VideoFrame {
+  timestamp: number;
+  imageBase64: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, video, platform } = await request.json();
+    const { image, videoFrames, platform } = await request.json();
 
-    if (!image && !video) {
+    if (!image && !videoFrames) {
       return NextResponse.json(
         { error: "No image or video provided" },
         { status: 400 }
       );
     }
 
-    // Handle video: extract frames and analyze each
-    if (video) {
-      const ffmpegAvailable = await checkFfmpegAvailable();
-      if (!ffmpegAvailable) {
-        return NextResponse.json(
-          { error: "Video analysis requires ffmpeg. Please install ffmpeg." },
-          { status: 400 }
-        );
-      }
-
-      const frames = await extractVideoFrames(video, 5);
-      if (frames.length === 0) {
-        return NextResponse.json(
-          { error: "Failed to extract frames from video" },
-          { status: 400 }
-        );
-      }
+    // Handle video frames (extracted in browser)
+    if (videoFrames && Array.isArray(videoFrames) && videoFrames.length > 0) {
+      const frames = videoFrames as VideoFrame[];
 
       // Analyze each frame
       const frameAnalyses = [];
@@ -55,7 +45,7 @@ export async function POST(request: NextRequest) {
       let analysisId: string | undefined;
       try {
         const saved = await saveAnalysis({
-          image_hash: await generateImageHash(video),
+          image_hash: await generateImageHash(frames[0]?.imageBase64 || ""),
           platform: platform || undefined,
           detected_issues: combinedResult.issues,
           original_prompt_guess: combinedResult.originalPrompt,
@@ -70,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         ...combinedResult,
         analysisId,
-        frameAnalyses, // Include individual frame analyses
+        frameAnalyses,
       });
     }
 

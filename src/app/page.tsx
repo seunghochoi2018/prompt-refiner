@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MediaUploader from "@/components/MediaUploader";
 import AnalysisResult from "@/components/AnalysisResult";
+import { extractFramesInBrowser } from "@/lib/videoClient";
 
 const AI_PLATFORMS = {
   image: [
@@ -45,13 +46,29 @@ export default function Home() {
     setResult(null);
 
     try {
+      let requestBody: Record<string, unknown>;
+
+      if (type === "video") {
+        // Extract frames in browser (no server-side ffmpeg needed)
+        const frames = await extractFramesInBrowser(data, 5);
+        if (frames.length === 0) {
+          throw new Error("Failed to extract frames from video");
+        }
+        requestBody = {
+          videoFrames: frames,
+          platform: platform || undefined,
+        };
+      } else {
+        requestBody = {
+          image: data,
+          platform: platform || undefined,
+        };
+      }
+
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          [type === "video" ? "video" : "image"]: data,
-          platform: platform || undefined,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
