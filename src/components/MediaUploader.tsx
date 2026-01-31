@@ -161,36 +161,47 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-        <span className="text-sm text-gray-500 dark:text-gray-400">or paste URL</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">Image URL only</span>
         <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
       </div>
 
       {/* URL Input */}
-      <div className="flex gap-2">
-        <input
-          type="url"
-          value={urlInput}
-          onChange={(e) => setUrlInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
-          placeholder="https://example.com/image.jpg"
-          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          onClick={handleUrlSubmit}
-          disabled={isLoadingUrl || !urlInput.trim()}
-          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {isLoadingUrl ? "..." : "Fetch"}
-        </button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
+            placeholder="https://example.com/image.jpg"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleUrlSubmit}
+            disabled={isLoadingUrl || !urlInput.trim()}
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoadingUrl ? "..." : "Fetch"}
+          </button>
+        </div>
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          * Video URL is not supported. Please download and upload the file directly.
+        </p>
       </div>
 
       {/* Quick Tips */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-sm text-gray-600 dark:text-gray-400">
-        <p className="font-medium mb-2">How to upload:</p>
-        <ul className="space-y-1">
-          <li>- <b>Image</b>: Copy image, then Ctrl+V / or drag file / or paste direct URL</li>
-          <li>- <b>Video</b>: Download and drag file here</li>
-        </ul>
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
+        <p className="font-medium text-blue-800 dark:text-blue-300 mb-2">How to upload:</p>
+        <div className="space-y-2 text-blue-700 dark:text-blue-400">
+          <div className="flex items-start gap-2">
+            <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium">Image</span>
+            <span>Right-click image → Copy → Ctrl+V here</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded text-xs font-medium">Video</span>
+            <span>Download video → Drag file here or click to browse</span>
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
