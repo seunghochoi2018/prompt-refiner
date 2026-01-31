@@ -1,17 +1,23 @@
 // Video frame extraction for analysis
 // Note: Requires ffmpeg installed on the system
+// This module only works in Node.js server environment
 
-import { spawn } from "child_process";
-import { writeFileSync, unlinkSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
-import { randomUUID } from "crypto";
+let spawn: typeof import("child_process").spawn;
+let fs: typeof import("fs");
+let path: typeof import("path");
+let os: typeof import("os");
+let crypto: typeof import("crypto");
 
-const TEMP_DIR = join(tmpdir(), "prompt-refiner");
+function getTempDir(): string {
+  if (!fs) fs = require("fs");
+  if (!path) path = require("path");
+  if (!os) os = require("os");
 
-// Ensure temp directory exists
-if (!existsSync(TEMP_DIR)) {
-  mkdirSync(TEMP_DIR, { recursive: true });
+  const tempDir = path.join(os.tmpdir(), "prompt-refiner");
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+  return tempDir;
 }
 
 export interface VideoFrame {
@@ -29,16 +35,21 @@ export async function extractVideoFrames(
   videoBase64: string,
   numFrames: number = 5
 ): Promise<VideoFrame[]> {
-  const id = randomUUID();
-  const inputPath = join(TEMP_DIR, `${id}_input.mp4`);
-  const outputPattern = join(TEMP_DIR, `${id}_frame_%03d.jpg`);
+  // Lazy load Node.js modules
+  if (!fs) fs = require("fs");
+  if (!path) path = require("path");
+  if (!crypto) crypto = require("crypto");
+
+  const TEMP_DIR = getTempDir();
+  const id = crypto.randomUUID();
+  const inputPath = path.join(TEMP_DIR, `${id}_input.mp4`);
 
   try {
     // Write video to temp file
     const videoData = videoBase64.includes(",")
       ? videoBase64.split(",")[1]
       : videoBase64;
-    writeFileSync(inputPath, Buffer.from(videoData, "base64"));
+    fs.writeFileSync(inputPath, Buffer.from(videoData, "base64"));
 
     // Get video duration
     const duration = await getVideoDuration(inputPath);
@@ -55,31 +66,33 @@ export async function extractVideoFrames(
 
     for (let i = 0; i < timestamps.length; i++) {
       const timestamp = timestamps[i];
-      const outputPath = join(TEMP_DIR, `${id}_frame_${i}.jpg`);
+      const outputPath = path.join(TEMP_DIR, `${id}_frame_${i}.jpg`);
 
       await extractFrame(inputPath, outputPath, timestamp);
 
-      if (existsSync(outputPath)) {
-        const frameBuffer = require("fs").readFileSync(outputPath);
+      if (fs.existsSync(outputPath)) {
+        const frameBuffer = fs.readFileSync(outputPath);
         frames.push({
           timestamp,
           imageBase64: `data:image/jpeg;base64,${frameBuffer.toString("base64")}`,
         });
-        unlinkSync(outputPath);
+        fs.unlinkSync(outputPath);
       }
     }
 
     return frames;
   } finally {
     // Cleanup input file
-    if (existsSync(inputPath)) {
-      unlinkSync(inputPath);
+    if (fs.existsSync(inputPath)) {
+      fs.unlinkSync(inputPath);
     }
   }
 }
 
 function getVideoDuration(inputPath: string): Promise<number> {
-  return new Promise((resolve, reject) => {
+  if (!spawn) spawn = require("child_process").spawn;
+
+  return new Promise((resolve) => {
     const ffprobe = spawn("ffprobe", [
       "-v", "error",
       "-show_entries", "format=duration",
@@ -88,16 +101,16 @@ function getVideoDuration(inputPath: string): Promise<number> {
     ]);
 
     let output = "";
-    ffprobe.stdout.on("data", (data) => {
+    ffprobe.stdout.on("data", (data: Buffer) => {
       output += data.toString();
     });
 
-    ffprobe.on("close", (code) => {
+    ffprobe.on("close", (code: number) => {
       if (code === 0) {
         const duration = parseFloat(output.trim());
         resolve(isNaN(duration) ? 10 : duration);
       } else {
-        resolve(10); // Default duration if ffprobe fails
+        resolve(10);
       }
     });
 
@@ -112,7 +125,9 @@ function extractFrame(
   outputPath: string,
   timestamp: number
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
+  if (!spawn) spawn = require("child_process").spawn;
+
+  return new Promise((resolve) => {
     const ffmpeg = spawn("ffmpeg", [
       "-y",
       "-ss", timestamp.toString(),
@@ -122,7 +137,7 @@ function extractFrame(
       outputPath,
     ]);
 
-    ffmpeg.on("close", (code) => {
+    ffmpeg.on("close", () => {
       resolve();
     });
 
@@ -136,15 +151,26 @@ function extractFrame(
  * Check if ffmpeg is available
  */
 export async function checkFfmpegAvailable(): Promise<boolean> {
+  // Vercel serverless doesn't have ffmpeg
+  if (process.env.VERCEL) {
+    return false;
+  }
+
+  if (!spawn) spawn = require("child_process").spawn;
+
   return new Promise((resolve) => {
-    const ffmpeg = spawn("ffmpeg", ["-version"]);
+    try {
+      const ffmpeg = spawn("ffmpeg", ["-version"]);
 
-    ffmpeg.on("close", (code) => {
-      resolve(code === 0);
-    });
+      ffmpeg.on("close", (code: number) => {
+        resolve(code === 0);
+      });
 
-    ffmpeg.on("error", () => {
+      ffmpeg.on("error", () => {
+        resolve(false);
+      });
+    } catch {
       resolve(false);
-    });
+    }
   });
 }
