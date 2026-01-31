@@ -5,37 +5,9 @@ import MediaUploader from "@/components/MediaUploader";
 import AnalysisResult from "@/components/AnalysisResult";
 import { extractFramesInBrowser } from "@/lib/videoClient";
 
-const AI_PLATFORMS = {
-  image: [
-    { id: "midjourney", name: "Midjourney" },
-    { id: "dalle", name: "DALL-E 3" },
-    { id: "sd", name: "Stable Diffusion" },
-    { id: "sdxl", name: "SDXL" },
-    { id: "flux", name: "Flux" },
-    { id: "ideogram", name: "Ideogram" },
-    { id: "leonardo", name: "Leonardo.AI" },
-    { id: "firefly", name: "Adobe Firefly" },
-    { id: "imagen", name: "Google Imagen" },
-    { id: "playground", name: "Playground AI" },
-  ],
-  video: [
-    { id: "sora", name: "Sora" },
-    { id: "runway", name: "Runway Gen-3" },
-    { id: "pika", name: "Pika" },
-    { id: "kling", name: "Kling" },
-    { id: "veo", name: "Veo" },
-    { id: "minimax", name: "MiniMax" },
-    { id: "luma", name: "Luma Dream Machine" },
-    { id: "haiper", name: "Haiper" },
-    { id: "genmo", name: "Genmo" },
-    { id: "morph", name: "Morph Studio" },
-  ],
-};
-
 export default function Home() {
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
-  const [platform, setPlatform] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<{
     originalPrompt: string;
@@ -60,20 +32,13 @@ export default function Home() {
       let requestBody: Record<string, unknown>;
 
       if (type === "video") {
-        // Extract frames in browser (no server-side ffmpeg needed)
         const frames = await extractFramesInBrowser(data, 5);
         if (frames.length === 0) {
           throw new Error("Failed to extract frames from video");
         }
-        requestBody = {
-          videoFrames: frames,
-          platform: platform || undefined,
-        };
+        requestBody = { videoFrames: frames };
       } else {
-        requestBody = {
-          image: data,
-          platform: platform || undefined,
-        };
+        requestBody = { image: data };
       }
 
       const response = await fetch("/api/analyze", {
@@ -122,59 +87,7 @@ export default function Home() {
         {/* Main Content */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
           {!mediaData ? (
-            <div className="space-y-6">
-              {/* AI Platform Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Target AI Platform (for optimized prompt style)
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Image AIs */}
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Image</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AI_PLATFORMS.image.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setPlatform(platform === p.id ? "" : p.id)}
-                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                            platform === p.id
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                          }`}
-                        >
-                          {p.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Video AIs */}
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Video</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AI_PLATFORMS.video.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setPlatform(platform === p.id ? "" : p.id)}
-                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                            platform === p.id
-                              ? "bg-purple-600 text-white"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                          }`}
-                        >
-                          {p.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                {!platform && (
-                  <p className="text-xs text-gray-400 mt-2">Select a platform for optimized prompt style, or skip for generic prompt</p>
-                )}
-              </div>
-
-              <MediaUploader onUpload={handleMediaUpload} />
-            </div>
+            <MediaUploader onUpload={handleMediaUpload} />
           ) : (
             <div className="space-y-6">
               {/* Preview */}
@@ -254,31 +167,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Supported Platforms */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Works with 20+ AI generators
-          </p>
-          <div className="flex justify-center gap-4 flex-wrap text-gray-400 dark:text-gray-500 text-sm">
-            <span>Midjourney</span>
-            <span>DALL-E 3</span>
-            <span>Stable Diffusion</span>
-            <span>SDXL</span>
-            <span>Flux</span>
-            <span>Leonardo.AI</span>
-            <span>Firefly</span>
-            <span>Sora</span>
-            <span>Runway</span>
-            <span>Pika</span>
-            <span>Kling</span>
-            <span>Veo</span>
-            <span>Luma</span>
-            <span>+ more</span>
-          </div>
-        </div>
-
         {/* Footer */}
-        <footer className="mt-8 text-center text-xs text-gray-400 space-y-2">
+        <footer className="mt-12 text-center text-xs text-gray-400 space-y-2">
           <p>&copy; {new Date().getFullYear()} Prompt Refiner by Mike. All rights reserved.</p>
           <div className="flex justify-center gap-4">
             <a href="/privacy" className="hover:text-gray-600 dark:hover:text-gray-300">Privacy Policy</a>
