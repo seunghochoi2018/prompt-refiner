@@ -138,7 +138,7 @@ export async function saveTrainingData(pairs: PromptImagePair[]): Promise<number
         .from("training_data")
         .select("id")
         .eq("image_url", pair.imageUrl)
-        .single();
+        .maybeSingle();
 
       if (existing) continue;
 
