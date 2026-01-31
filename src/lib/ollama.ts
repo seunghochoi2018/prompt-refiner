@@ -241,3 +241,63 @@ export async function getAvailableModels(): Promise<string[]> {
     return [];
   }
 }
+
+// 학습 데이터에서 유사 프롬프트 참고
+export async function getTrainingExamples(platform?: string): Promise<string> {
+  try {
+    const { supabase, isSupabaseConfigured } = await import("./supabase");
+
+    if (!isSupabaseConfigured || !supabase) return "";
+
+    let query = supabase
+      .from("training_data")
+      .select("prompt")
+      .limit(10);
+
+    if (platform) {
+      query = query.eq("platform", platform);
+    }
+
+    const { data } = await query;
+
+    if (!data || data.length === 0) return "";
+
+    const examples = data.map((d: { prompt: string }) => `- "${d.prompt}"`).join("\n");
+
+    return `\n\nReference examples from successful prompts:\n${examples}`;
+  } catch {
+    return "";
+  }
+}
+
+// 성공한 프롬프트 패턴 분석
+export async function getSuccessfulPatterns(platform?: string): Promise<string> {
+  try {
+    const { supabase, isSupabaseConfigured } = await import("./supabase");
+
+    if (!isSupabaseConfigured || !supabase) return "";
+
+    let query = supabase
+      .from("issue_patterns")
+      .select("issue_type, successful_fixes, success_count")
+      .gt("success_count", 3)
+      .order("success_count", { ascending: false })
+      .limit(5);
+
+    if (platform) {
+      query = query.eq("platform", platform);
+    }
+
+    const { data } = await query;
+
+    if (!data || data.length === 0) return "";
+
+    const patterns = data.map((p: { issue_type: string; successful_fixes: string[]; success_count: number }) =>
+      `- For ${p.issue_type}: ${p.successful_fixes[0] || "N/A"} (${p.success_count} successes)`
+    ).join("\n");
+
+    return `\n\nProven fix patterns:\n${patterns}`;
+  } catch {
+    return "";
+  }
+}
