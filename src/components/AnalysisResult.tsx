@@ -101,9 +101,7 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
       </div>
 
       {/* Feedback Form */}
-      {result.analysisId && (
-        <FeedbackForm analysisId={result.analysisId} />
-      )}
+      <FeedbackForm analysisId={result.analysisId} />
     </div>
   );
 }

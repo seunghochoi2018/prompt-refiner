@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface FeedbackFormProps {
-  analysisId: string;
+  analysisId?: string;
   onFeedbackSubmit?: () => void;
 }
 
@@ -186,7 +186,7 @@ export default function FeedbackForm({ analysisId, onFeedbackSubmit }: FeedbackF
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full py-3 px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? "Submitting..." : "Submit Feedback"}
         </button>
