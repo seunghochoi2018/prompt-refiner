@@ -211,6 +211,18 @@ export default function MediaUploader({ onUpload }: MediaUploaderProps) {
               <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded text-xs font-medium">Video</span>
             </div>
             <p className="ml-1">Click download button on AI site → Drag .mp4 file here</p>
+            <details className="ml-1 mt-1 text-xs text-gray-500">
+              <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">No download button? (YouTube, etc.)</summary>
+              <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <p className="font-medium mb-1">Screen Record (Windows):</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Play the video</li>
+                  <li>Press <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">Win + Alt + R</span> to start recording</li>
+                  <li>Press again to stop</li>
+                  <li>File saved in Videos/Captures folder</li>
+                </ol>
+              </div>
+            </details>
           </div>
         </div>
         <p className="mt-3 text-xs text-red-500 dark:text-red-400">* Do NOT use &quot;Save page as&quot; - this saves webpage, not the image/video</p>
